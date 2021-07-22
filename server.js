@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
+// const cors = require('cors'); // overcomes chrome security problem of unrecognized source
 const knex = require('knex');
 const bcrypt = require('bcryptjs');
 
@@ -17,6 +17,7 @@ const db = knex ({
 
 const app = express();
 app.use(bodyParser.json());
+// app.use(cors());
 
 app.get('/', (req, res)=> {
 	res.send('this is working..')
