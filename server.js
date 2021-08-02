@@ -15,14 +15,36 @@ const db = knex ({
   	}
 });
  
-db.select('*').from('users').then(console.log)
 
 const app = express();
+app.listen(3000, ()=> {
+	console.log('app is running on port 3000');
+})
 app.use(bodyParser.json());
 // app.use(cors());
 
-app.get('/', (req, res)=> {
-	res.send('this is working..')
+app.get('/getallusers', (req, res)=> {
+	db.select('*').from('users').then(users => {
+		console.log(users)
+		res.json(users)
+	})
+})
+
+app.get('/getUserById/:id', (req, res) => {
+	const { id } = req.params;
+	db.select('*')
+		.from('users')
+		.where({id})  // same as {id: id}
+		.then (user => {
+			if (user.length) {
+				res.json(user[0]);	
+			} else {
+				res.status(400).json('user not found..')
+			}
+		})
+		.catch(err => {
+			res.status(400).json('error getting user..')
+		})
 })
 
 app.post('/register', (req,res) => {
@@ -59,6 +81,7 @@ app.post('/signin', (req, res) => {
 app.post('/register2', (req, res)=>{
 	const { email, Fname, Lname , password} = req.body;
 	const hash = bcrypt.hashSync(password);
+	console.log('hash: ', hash);
 	db.transaction(trx => {
 		trx.insert({
 			hash: hash,
@@ -85,23 +108,5 @@ app.post('/register2', (req, res)=>{
 	.catch(err => res.status(400).json('unable to register..'))
 })
 
-app.get('/profile/:id', (req, res) => {
-	const { id } = req.params;
-	db.select('*')
-		.from('users')
-		.where({id})  // same as {id: id}
-		.then (user => {
-			if (user.length) {
-				res.json(user[0]);	
-			} else {
-				res.status(400).json('user not found..')
-			}
-		})
-		.catch(err => {
-			res.status(400).json('error getting user..')
-		})
-})
 
-app.listen(3000, ()=> {
-	console.log('app is running on port 3000');
-})
+
