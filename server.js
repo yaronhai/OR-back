@@ -8,12 +8,14 @@ const db = knex ({
   	client: 'pg',
   	connection: {
 		host : '127.0.0.1',
+		port: '5433',
 		user : 'postgres',
-		password : '',
-		database : 'my_or'
+		password : 'Ya1431',
+		database : 'postgres'
   	}
 });
-
+ 
+db.select('*').from('users').then(console.log)
 
 const app = express();
 app.use(bodyParser.json());
@@ -21,6 +23,15 @@ app.use(bodyParser.json());
 
 app.get('/', (req, res)=> {
 	res.send('this is working..')
+})
+
+app.post('/register', (req,res) => {
+	const {name, email} = req.body;
+	db('users').insert({
+		email: email,
+		name: name
+	}).then(console.log);
+	
 })
 
 app.post('/signin', (req, res) => {
@@ -44,7 +55,8 @@ app.post('/signin', (req, res) => {
 		.catch(err => res.status(400).json('wrong credentials..'))
 })
 
-app.post('/register', (req, res)=>{
+
+app.post('/register2', (req, res)=>{
 	const { email, Fname, Lname , password} = req.body;
 	const hash = bcrypt.hashSync(password);
 	db.transaction(trx => {
