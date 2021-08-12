@@ -17,9 +17,8 @@ const db = knex ({
  
 
 const app = express();
-app.listen(3000, ()=> {
-	console.log('app is running on port 3000');
-})
+const port = 3000;
+app.listen(port, () => console.log('app is running on port ',port) )
 app.use(bodyParser.json());
 // app.use(cors());
 
@@ -34,7 +33,7 @@ app.get('/getUserById/:id', (req, res) => {
 	const { id } = req.params;
 	db.select('*')
 		.from('users')
-		.where({id})  // same as {id: id}
+		.where({id})  // same as: where {id: id}
 		.then (user => {
 			if (user.length) {
 				res.json(user[0]);	
@@ -47,28 +46,25 @@ app.get('/getUserById/:id', (req, res) => {
 		})
 })
 
-app.post('/register', (req,res) => {
-	const {name, email} = req.body;
-	db('users').insert({
-		email: email,
-		name: name
-	}).then(console.log);
-	
-})
+
 
 app.post('/signin', (req, res) => {
-	db.select('email', 'hash').from('logins')
+	db.select('email', 'hash')
+		.from('logins')
 		.where('email', '=', req.body.email)
 		.then(data => {
 			const isValid = bcrypt.compareSync(req.body.password, data[0].hash);
-			console.log(isValid);
+			// const isValid = (req.body.password == data[0].hash)
 			if (isValid) {
-				console.log(data[0]);
-				return db.select('*').from('users')
+				console.log(isValid, data[0]);
+				db('users')
+					.where('email', '=' , data[0].email)
+					.update({ last_signin : new Date() })
+					.catch(err => res.json("error updating user.."))
+
+				db.select('*').from('users')
 					.where('email','=', req.body.email)
-					.then(user => {
-						res.json(user[0])
-					})
+					.then(user => res.json(user[0]) )
 					.catch(err => res.status(400).json('unable to get user..'))
 			} else {
 				res.status(400).json('wrong credentials..')
@@ -77,8 +73,27 @@ app.post('/signin', (req, res) => {
 		.catch(err => res.status(400).json('wrong credentials..'))
 })
 
+app.post('/changepassword', (req, res) => {
+	const {email, oldpass, newpass} = req.body;
+	db	.select('hash')
+		.from('logins')
+		.where('email', '=', email)
+		.then(oldhash => {
+			isValid = bcrypt.compareSync(oldpass, oldhash[0].hash)
+			if(isValid) {
+				db('logins')
+				.where('email' ,'=', email)
+				.update({ hash : bcrypt.hashSync(newpass) })
+				.then(res.json("password changed successfully!"))
+				.catch(err => res.json("Error changing password.."))
+			} else {
+				res.json("wrong credentials..")
+			}
+		})
+		.catch(console.log)
+})
 
-app.post('/register2', (req, res)=>{
+app.post('/register', (req, res)=>{
 	const { email, Fname, Lname , password} = req.body;
 	const hash = bcrypt.hashSync(password);
 	console.log('hash: ', hash);
